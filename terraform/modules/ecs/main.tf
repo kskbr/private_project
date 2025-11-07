@@ -13,7 +13,7 @@ resource "aws_lb_target_group" "service" {
   target_type = "ip"
 
   health_check {
-    path                = "/${var.context_path}/actuator/health/liveness"
+    path                = "/${var.context_path}/actuator/health"
     protocol            = "HTTP"
     //port                = "${var.health_check_port}"
     matcher             = "200"
@@ -22,10 +22,6 @@ resource "aws_lb_target_group" "service" {
     healthy_threshold   = 2
     unhealthy_threshold = 3
   }
-}
-
-locals {
-  api_path = replace(var.service_name, "-service", "")
 }
 
 # 3. Listener Rule (서비스별로 생성)

@@ -1,9 +1,9 @@
 # 배포할 서비스별 목록 및 고유 설정, 파라미터 스토어 경로 이름 정의
 locals {
   service_definitions = {
-    "customers-service" = { priority = 110, path_name = "customers", needs_db = true }
-    "vets-service"      = { priority = 120, path_name = "vets", needs_db = true }
-    "visits-service"    = { priority = 130, path_name = "visits", needs_db = true }
+    "customers" = { priority = 110, path_name = "customers", needs_db = true }
+    "vets"      = { priority = 120, path_name = "vets", needs_db = true }
+    "visits"    = { priority = 130, path_name = "visits", needs_db = true }
   }
 }
 
@@ -26,7 +26,7 @@ locals {
     for name, config in local.service_definitions : name => {
       # 데이터 소스는 원래 서비스 이름(map의 key)으로 참조합니다.
       container_port = tonumber(data.aws_ssm_parameter.service_ports[name].value)
-      image_uri      = "${module.ecr.repository_urls[name]}:latest"
+      image_uri      = "${module.ecr.repository_urls["${name}-service"]}:latest"
       priority       = config.priority
       needs_db       = config.needs_db
     }
@@ -71,7 +71,7 @@ module "ecs" {
   image_uri         = each.value.image_uri
   container_port    = each.value.container_port
   listener_priority = each.value.priority
-  cloudmap_service_arn = module.cloudmap.service_arns[each.key]
+  cloudmap_service_arn = module.cloudmap.service_arns["${each.key}-service"]
 
   # [수정] DB 사용 서비스들의 헬스 체크 유예 기간 증가
   health_check_grace_period = 180
@@ -145,7 +145,7 @@ resource "aws_ecs_task_definition" "admin_server" {
     }],
     environment = [
       //{ name = "MANAGEMENT_HEALTH_PROBES_ENABLED", value = "true" },
-      { name = "SPRING_PROFILES_ACTIVE", value = "mysql,aws" }
+      { name = "SPRING_PROFILES_ACTIVE", value = "aws" }
     ],
     logConfiguration = {
       logDriver = "awslogs",
